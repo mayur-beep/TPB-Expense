@@ -1256,10 +1256,13 @@
                     <span class="filter-label">Category</span>
                     <select id="managerCategory" onchange="filterManagerData()">
                         <option value="all">All Categories</option>
-                        <option value="Outsource">Outsource/PR</option>
+                        <option value="Outsource/PR">Outsource/PR</option>
                         <option value="Travel">Travel</option>
-                        <option value="Tools">Tools</option>
-                        <option value="Ads">Ads</option>
+                        <option value="Ads & Marketing">Ads & Marketing</option>
+                        <option value="Tools & Subscriptions">Tools & Subs</option>
+                        <option value="Telegram">Telegram</option>
+                        <option value="G Suite">G Suite</option>
+                        <option value="Content">Content</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -1443,10 +1446,14 @@
                     <span class="filter-label">Category</span>
                     <select id="accountsCategory">
                         <option value="all">All</option>
-                        <option value="Tools">Tools</option>
-                        <option value="Outsource">Outsource</option>
+                        <option value="Outsource/PR">Outsource/PR</option>
                         <option value="Travel">Travel</option>
-                        <option value="Ads">Ads</option>
+                        <option value="Ads & Marketing">Ads & Marketing</option>
+                        <option value="Tools & Subscriptions">Tools & Subs</option>
+                        <option value="Telegram">Telegram</option>
+                        <option value="G Suite">G Suite</option>
+                        <option value="Content">Content</option>
+                        <option value="Office">Office</option>
                     </select>
                 </div>
                 <button class="btn btn-primary btn-sm" onclick="applyFilters()">Apply</button>
@@ -1454,12 +1461,12 @@
 
             <!-- Category Pills with Wastage -->
             <div class="category-pills">
-                <span class="category-pill active" onclick="quickFilter('all')">All (687)</span>
-                <span class="category-pill" onclick="quickFilter('Outsource')">Outsource (136)</span>
-                <span class="category-pill" onclick="quickFilter('Tools')">Tools (269)</span>
-                <span class="category-pill" onclick="quickFilter('Travel')">Travel (66)</span>
-                <span class="category-pill" onclick="quickFilter('Ads')">Ads (128)</span>
-                <span class="category-pill wastage" onclick="quickFilter('wastage')">⚠️ Wastage (12)</span>
+                <span class="category-pill active" onclick="quickFilter('all')">All</span>
+                <span class="category-pill" onclick="quickFilter('Outsource/PR')">Outsource/PR</span>
+                <span class="category-pill" onclick="quickFilter('Tools & Subscriptions')">Tools</span>
+                <span class="category-pill" onclick="quickFilter('Travel')">Travel</span>
+                <span class="category-pill" onclick="quickFilter('Ads & Marketing')">Ads</span>
+                <span class="category-pill wastage" onclick="quickFilter('wastage')">Wastage</span>
             </div>
 
             <!-- Summary Stats with Wastage -->
@@ -1534,30 +1541,90 @@
     </main>
 
     <script>
-        const CONFIG = { SHEET_ID: 'YOUR_GOOGLE_SHEET_ID', API_KEY: 'YOUR_API_KEY', SHEET_NAME: '2025 Expense', REFRESH_INTERVAL: 60000, ITEMS_PER_PAGE: 20 };
+        // ============================================
+        // CONFIGURATION - YOUR GOOGLE SHEETS CREDENTIALS
+        // ============================================
+        const CONFIG = {
+            SHEET_ID: '1oQyoxNuZveFWbA7-SNziCX5muIbX2P4-kS801Mv2_Ng',
+            API_KEY: 'AIzaSyDiIA75Y8N10JpR0J5jeSy-se4WGtldV4Q',
+            TRANSACTIONS_SHEET: 'Transactions',
+            SUMMARY_SHEET: 'Summary',
+            ITEMS_PER_PAGE: 20
+        };
         const WASTAGE_RULES = { keywords: ['fraud', 'unused', 'duplicate', 'cancelled', 'refund'], flaggedVendors: ['Buy Telegram account'], highValueThreshold: 50000 };
         let allData = [], filteredData = [], currentPage = 1, chartInstances = {};
 
-        const sampleData = [
-            { date: '2025-12-10', amount: 21000, category: 'Outsource', particular: 'Aligarh office rent', platform: 'UPI', project: '', doneBy: '', askedBy: '', wastage: 'ok' },
-            { date: '2025-12-05', amount: 9000, category: 'Outsource', particular: 'Buy 100 telegram account', platform: 'Buy Telegram account', project: 'For sales team', doneBy: '', askedBy: '', wastage: 'review' },
-            { date: '2025-11-24', amount: 224360, category: 'Outsource', particular: 'Yahoo Finance', platform: 'Accesswire', project: 'Yahoo Finance package', doneBy: '', askedBy: '', wastage: 'ok' },
-            { date: '2025-11-17', amount: 221648, category: 'Outsource', particular: 'Yahoo Finance', platform: 'Accesswire', project: 'Yahoo Finance package', doneBy: '', askedBy: '', wastage: 'ok' },
-            { date: '2025-09-30', amount: 61000, category: 'Outsource', particular: 'Sent to pramod for Gsuit accounts', platform: 'UPI', project: 'Email Marketing', doneBy: '', askedBy: '', wastage: 'wastage' },
-            { date: '2025-09-22', amount: 75000, category: 'Outsource', particular: 'Sent to pramod for Gsuit accounts', platform: 'UPI', project: 'Email Marketing', doneBy: '', askedBy: '', wastage: 'wastage' },
-            { date: '2025-09-19', amount: 164374, category: 'Outsource', particular: 'Gitex event booth in dubai', platform: 'payment link', project: 'Event', doneBy: '', askedBy: '', wastage: 'ok' },
-            { date: '2025-08-12', amount: 30635, category: 'Outsource', particular: 'CryptoPotato 1 PR Payment', platform: 'CryptoPotato', project: 'PR', doneBy: '', askedBy: '', wastage: 'ok' },
-            { date: '2025-06-18', amount: 120720, category: 'Outsource', particular: 'PR on Decrypt', platform: 'Chainwire', project: 'Outside order', doneBy: '', askedBy: '', wastage: 'ok' },
-            { date: '2025-06-15', amount: 12750, category: 'Outsource', particular: 'Telegram accounts - FRAUD', platform: 'Unknown Vendor', project: '', doneBy: '', askedBy: '', wastage: 'wastage' },
-            { date: '2025-05-29', amount: 192434, category: 'Outsource', particular: 'Accesswire Installment', platform: 'Accesswire', project: 'PR', doneBy: '', askedBy: '', wastage: 'ok' },
-            { date: '2025-05-15', amount: 45000, category: 'Tools', particular: 'Midjourney Annual - Duplicate', platform: 'Midjourney', project: '', doneBy: '', askedBy: '', wastage: 'wastage' },
-        ];
+        // ============================================
+        // GOOGLE SHEETS API FUNCTIONS
+        // ============================================
+        async function fetchSheetData(sheetName, range = '') {
+            const rangeParam = range ? `!${range}` : '';
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${sheetName}${rangeParam}?key=${CONFIG.API_KEY}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching sheet data:', error);
+                throw error;
+            }
+        }
+
+        async function loadAllData() {
+            try {
+                document.getElementById('lastSync').textContent = 'Loading...';
+                const txnData = await fetchSheetData(CONFIG.TRANSACTIONS_SHEET, 'A3:X1000');
+                if (!txnData.values || txnData.values.length === 0) {
+                    console.warn('No transaction data found');
+                    allData = [];
+                } else {
+                    allData = txnData.values.filter(row => row[0]).map((row, index) => ({
+                        date: row[0] || '',
+                        amount: parseFloat(row[1]) || 0,
+                        paymentType: row[2] || '',
+                        category: row[3] || '',
+                        particular: row[4] || '',
+                        platform: row[5] || '',
+                        project: row[6] || '',
+                        notes: row[7] || '',
+                        source: row[8] || '',
+                        doneBy: row[9] || '',
+                        askedBy: row[10] || '',
+                        invoice: row[11] || '',
+                        id: row[12] || `TXN${String(index + 1).padStart(3, '0')}`,
+                        submittedAt: row[13] || '',
+                        month: row[14] || '',
+                        quarter: row[15] || '',
+                        status: row[16] || 'Pending',
+                        wastage: mapWastageStatus(row[17]),
+                        wastageReason: row[18] || '',
+                        approvedBy: row[19] || '',
+                        reviewDate: row[20] || '',
+                        reviewerNotes: row[21] || '',
+                        autoFlag: row[22] || 'OK',
+                        flagReason: row[23] || ''
+                    }));
+                }
+                filteredData = [...allData];
+                initFounderView(); initManagerView(); initAccountsView(); updateAlertBadges(); updateSyncStatus();
+                console.log(`Loaded ${allData.length} transactions from Google Sheets`);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('lastSync').textContent = 'Error!';
+                alert('Failed to load data from Google Sheets.\n\nPlease check:\n1. Sheet ID is correct\n2. API Key is valid\n3. Sheet is shared as "Anyone with link can view"');
+            }
+        }
+
+        function mapWastageStatus(value) {
+            if (!value) return 'ok';
+            const lower = value.toString().toLowerCase().trim();
+            if (lower === 'wastage') return 'wastage';
+            if (lower === 'review') return 'review';
+            return 'ok';
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
-            allData = sampleData.map(item => ({ ...item, wastage: detectWastage(item) }));
-            filteredData = [...allData];
-            initFounderView(); initManagerView(); initAccountsView(); updateAlertBadges();
-            setInterval(refreshData, CONFIG.REFRESH_INTERVAL);
+            loadAllData();
         });
 
         function detectWastage(item) {
@@ -1579,9 +1646,11 @@
 
         function updateAlertBadges() {
             const stats = getWastageStats();
-            document.getElementById('founderAlertCount').textContent = 5;
-            document.getElementById('managerAlertCount').textContent = 3;
-            document.getElementById('accountsAlertCount').textContent = stats.totalCount;
+            const pendingCount = allData.filter(d => d.status === 'Pending').length;
+            const missingInvoice = allData.filter(d => !d.invoice && d.amount > 10000).length;
+            document.getElementById('founderAlertCount').textContent = stats.wastageCount + pendingCount;
+            document.getElementById('managerAlertCount').textContent = stats.reviewCount;
+            document.getElementById('accountsAlertCount').textContent = missingInvoice + stats.totalCount;
         }
 
         function switchTab(tabName) {
@@ -1593,9 +1662,9 @@
 
         function initFounderView() {
             const total = allData.reduce((sum, item) => sum + item.amount, 0);
-            const outsource = allData.filter(d => d.category === 'Outsource').reduce((sum, item) => sum + item.amount, 0);
+            const outsource = allData.filter(d => d.category === 'Outsource/PR').reduce((sum, item) => sum + item.amount, 0);
             const travel = allData.filter(d => d.category === 'Travel').reduce((sum, item) => sum + item.amount, 0);
-            const tools = allData.filter(d => d.category === 'Tools').reduce((sum, item) => sum + item.amount, 0);
+            const tools = allData.filter(d => d.category === 'Tools & Subscriptions').reduce((sum, item) => sum + item.amount, 0);
             const wastage = getWastageStats();
             document.getElementById('kpiTotalExpense').textContent = formatCurrency(total);
             document.getElementById('kpiOutsource').textContent = formatCurrency(outsource);
@@ -1708,7 +1777,7 @@
 
         function formatCurrency(amount) { if (amount >= 100000) return '₹' + (amount / 100000).toFixed(1) + 'L'; if (amount >= 1000) return '₹' + (amount / 1000).toFixed(1) + 'K'; return '₹' + amount.toFixed(0); }
         function formatDate(dateStr) { if (!dateStr) return '-'; const date = new Date(dateStr); return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }); }
-        function refreshData() { updateSyncStatus(); }
+        function refreshData() { loadAllData(); }
         function updateSyncStatus() { document.getElementById('lastSync').textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); }
 
         function exportData() {
